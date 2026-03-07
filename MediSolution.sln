@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Medi.Infrastructure", "Medi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Medi.Api", "Medi.Api\Medi.Api.csproj", "{CC0E169A-7819-6BFB-6510-1F550A24B30B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Medi.Application", "Medi.Application\Medi.Application.csproj", "{D74C7B90-F59B-4294-ACF5-89008747313A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{CC0E169A-7819-6BFB-6510-1F550A24B30B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CC0E169A-7819-6BFB-6510-1F550A24B30B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CC0E169A-7819-6BFB-6510-1F550A24B30B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D74C7B90-F59B-4294-ACF5-89008747313A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D74C7B90-F59B-4294-ACF5-89008747313A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D74C7B90-F59B-4294-ACF5-89008747313A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D74C7B90-F59B-4294-ACF5-89008747313A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

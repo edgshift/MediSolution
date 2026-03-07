@@ -1,3 +1,5 @@
+using Medi.Application.Interfaces;
+using Medi.Application.Services;
 using Medi.Infrastructure.Context;
 using Medi.Infrastructure.Interfaces;
 using Medi.Infrastructure.Repositories;
@@ -21,6 +23,12 @@ builder.Services.AddScoped<IPacienteRepository, PacienteRepository>();
 builder.Services.AddScoped<IDoctorRepository, DoctorRepository>();
 builder.Services.AddScoped<ITratamientoRepository, TratamientoRepository>();
 builder.Services.AddScoped<ISesionRepository, SesionRepository>();
+
+builder.Services.AddScoped<IPacienteService, PacienteService>();
+builder.Services.AddScoped<IDoctorService, DoctorService>();
+builder.Services.AddScoped<ITratamientoService, TratamientoService>();
+builder.Services.AddScoped<ISesionService, SesionService>();
+
 
 var app = builder.Build();
 

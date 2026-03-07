@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Medi.Application\Medi.Application.csproj" />
     <ProjectReference Include="..\Medi.Domain\Medi.Domain.csproj" />
     <ProjectReference Include="..\Medi.Infrastructure\Medi.Infrastructure.csproj" />
   </ItemGroup>
