@@ -8,15 +8,18 @@ namespace Medi.Application.Services
     public class TratamientoService : ITratamientoService
     {
         private readonly ITratamientoRepository _tratamientoRepository;
+        private readonly ICurrentUserService _currentUserService;
 
-        public TratamientoService(ITratamientoRepository tratamientoRepository)
+        public TratamientoService(ITratamientoRepository tratamientoRepository, ICurrentUserService currentUserService)
         {
             _tratamientoRepository = tratamientoRepository;
+            _currentUserService = currentUserService;
         }
 
         public async Task<IEnumerable<TratamientoDto>> GetAllAsync()
         {
             var tratamientos = await _tratamientoRepository.GetAllAsync();
+
             return tratamientos.Select(t => new TratamientoDto
             {
                 Id = t.Id,
@@ -44,33 +47,43 @@ namespace Medi.Application.Services
         {
             var tratamiento = new Tratamiento
             {
-                Nombre = tratamientoDto.Nombre,
-                Descripcion = tratamientoDto.Descripcion,
-                Costo = tratamientoDto.Costo
+                Nombre = tratamientoDto.Nombre.Trim(),
+                Descripcion = tratamientoDto.Descripcion.Trim(),
+                Costo = tratamientoDto.Costo,
+                CreatedBy = _currentUserService.GetUsername()
             };
 
-            var result = await _tratamientoRepository.AddAsync(tratamiento);
-            tratamientoDto.Id = result.Id;
-            return tratamientoDto;
-        }
+            var created = await _tratamientoRepository.AddAsync(tratamiento);
 
-        public async Task UpdateAsync(TratamientoDto tratamientoDto)
-        {
-            var tratamiento = await _tratamientoRepository.GetByIdAsync(tratamientoDto.Id);
-            if (tratamiento != null)
+            return new TratamientoDto
             {
-                tratamiento.Nombre = tratamientoDto.Nombre;
-                tratamiento.Descripcion = tratamientoDto.Descripcion;
-                tratamiento.Costo = tratamientoDto.Costo;
-                tratamiento.UpdatedAt = DateTime.UtcNow;
-
-                await _tratamientoRepository.UpdateAsync(tratamiento);
-            }
+                Id = created.Id,
+                Nombre = created.Nombre,
+                Descripcion = created.Descripcion,
+                Costo = created.Costo
+            };
         }
 
-        public async Task DeleteAsync(int id)
+        public async Task<bool> UpdateAsync(int id, TratamientoDto tratamientoDto)
         {
-            await _tratamientoRepository.SoftDeleteAsync(id);
+            if (id != tratamientoDto.Id) return false;
+
+            var tratamiento = await _tratamientoRepository.GetByIdAsync(id);
+            if (tratamiento == null) return false;
+
+            tratamiento.Nombre = tratamientoDto.Nombre.Trim();
+            tratamiento.Descripcion = tratamientoDto.Descripcion.Trim();
+            tratamiento.Costo = tratamientoDto.Costo;
+            tratamiento.UpdatedAt = DateTime.UtcNow;
+            tratamiento.UpdatedBy = _currentUserService.GetUsername();
+
+            await _tratamientoRepository.UpdateAsync(tratamiento);
+            return true;
+        }
+
+        public async Task<bool> DeleteAsync(int id)
+        {
+            return await _tratamientoRepository.SoftDeleteAsync(id, _currentUserService.GetUsername());
         }
     }
 }

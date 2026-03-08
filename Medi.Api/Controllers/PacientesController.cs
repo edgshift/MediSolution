@@ -1,52 +1,54 @@
+using Medi.Application.DTOs;
+using Medi.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Medi.Domain.Entities;
-using Medi.Infrastructure.Interfaces;
 
 namespace Medi.Api.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class PacientesController : ControllerBase
     {
-        private readonly IPacienteRepository _repo;
+        private readonly IPacienteService _service;
 
-        public PacientesController(IPacienteRepository repo)
+        public PacientesController(IPacienteService service)
         {
-            _repo = repo;
+            _service = service;
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<Paciente>>> GetAll()
-            => Ok(await _repo.GetAllAsync());
+        public async Task<ActionResult<IEnumerable<PacienteDto>>> GetAll()
+            => Ok(await _service.GetAllAsync());
 
         [HttpGet("{id:int}")]
-        public async Task<ActionResult<Paciente>> GetById(int id)
+        public async Task<ActionResult<PacienteDto>> GetById(int id)
         {
-            var pac = await _repo.GetByIdAsync(id);
-            return pac is null ? NotFound() : Ok(pac);
+            var paciente = await _service.GetByIdAsync(id);
+            return paciente is null ? NotFound() : Ok(paciente);
         }
 
         [HttpPost]
-        public async Task<ActionResult<Paciente>> Create(Paciente paciente)
+        public async Task<ActionResult<PacienteDto>> Create([FromBody] PacienteDto pacienteDto)
         {
-            var created = await _repo.AddAsync(paciente);
+            var created = await _service.CreateAsync(pacienteDto);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> Update(int id, Paciente paciente)
+        public async Task<IActionResult> Update(int id, [FromBody] PacienteDto pacienteDto)
         {
-            if (id != paciente.Id) return BadRequest("Id mismatch");
+            var updated = await _service.UpdateAsync(id, pacienteDto);
+            if (!updated) return BadRequest("No se pudo actualizar el paciente.");
 
-            await _repo.UpdateAsync(paciente);
             return NoContent();
         }
 
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> SoftDelete(int id)
         {
-            await _repo.SoftDeleteAsync(id);
-            return NoContent();
+            var deleted = await _service.DeleteAsync(id);
+            return deleted ? NoContent() : NotFound();
         }
     }
 }

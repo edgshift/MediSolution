@@ -7,7 +7,7 @@ namespace Medi.Application.Interfaces
         Task<IEnumerable<DoctorDto>> GetAllAsync();
         Task<DoctorDto?> GetByIdAsync(int id);
         Task<DoctorDto> CreateAsync(DoctorDto doctorDto);
-        Task UpdateAsync(DoctorDto doctorDto);
-        Task DeleteAsync(int id);
+        Task<bool> UpdateAsync(int id, DoctorDto doctorDto);
+        Task<bool> DeleteAsync(int id);
     }
 }

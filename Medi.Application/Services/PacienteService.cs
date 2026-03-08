@@ -8,10 +8,12 @@ namespace Medi.Application.Services
     public class PacienteService : IPacienteService
     {
         private readonly IPacienteRepository _pacienteRepository;
+        private readonly ICurrentUserService _currentUserService;
 
-        public PacienteService(IPacienteRepository pacienteRepository)
+        public PacienteService(IPacienteRepository pacienteRepository, ICurrentUserService currentUserService)
         {
             _pacienteRepository = pacienteRepository;
+            _currentUserService = currentUserService;
         }
 
         public async Task<IEnumerable<PacienteDto>> GetAllAsync()
@@ -50,15 +52,25 @@ namespace Medi.Application.Services
 
         public async Task<PacienteDto> CreateAsync(PacienteDto pacienteDto)
         {
+            if (pacienteDto.FechaNacimiento.Date >= DateTime.UtcNow.Date)
+                throw new InvalidOperationException("La fecha de nacimiento debe ser anterior al día actual.");
+
+            if (await _pacienteRepository.GetByCedulaAsync(pacienteDto.Cedula) != null)
+                throw new InvalidOperationException("Ya existe un paciente con esa cédula.");
+
+            if (await _pacienteRepository.GetByEmailAsync(pacienteDto.Email) != null)
+                throw new InvalidOperationException("Ya existe un paciente con ese correo.");
+
             var paciente = new Paciente
             {
-                Nombre = pacienteDto.Nombre,
-                Apellido = pacienteDto.Apellido,
-                Cedula = pacienteDto.Cedula,
-                Telefono = pacienteDto.Telefono,
-                Email = pacienteDto.Email,
-                FechaNacimiento = pacienteDto.FechaNacimiento,
-                Direccion = pacienteDto.Direccion
+                Nombre = pacienteDto.Nombre.Trim(),
+                Apellido = pacienteDto.Apellido.Trim(),
+                Cedula = pacienteDto.Cedula.Trim(),
+                Telefono = pacienteDto.Telefono.Trim(),
+                Email = pacienteDto.Email.Trim().ToLower(),
+                FechaNacimiento = pacienteDto.FechaNacimiento.Date,
+                Direccion = pacienteDto.Direccion.Trim(),
+                CreatedBy = _currentUserService.GetUsername()
             };
 
             var result = await _pacienteRepository.AddAsync(paciente);
@@ -66,27 +78,38 @@ namespace Medi.Application.Services
             return pacienteDto;
         }
 
-        public async Task UpdateAsync(PacienteDto pacienteDto)
+        public async Task<bool> UpdateAsync(int id, PacienteDto pacienteDto)
         {
-            var paciente = await _pacienteRepository.GetByIdAsync(pacienteDto.Id);
-            if (paciente != null)
-            {
-                paciente.Nombre = pacienteDto.Nombre;
-                paciente.Apellido = pacienteDto.Apellido;
-                paciente.Cedula = pacienteDto.Cedula;
-                paciente.Telefono = pacienteDto.Telefono;
-                paciente.Email = pacienteDto.Email;
-                paciente.FechaNacimiento = pacienteDto.FechaNacimiento;
-                paciente.Direccion = pacienteDto.Direccion;
-                paciente.UpdatedAt = DateTime.UtcNow;
+            if (id != pacienteDto.Id) return false;
 
-                await _pacienteRepository.UpdateAsync(paciente);
-            }
+            var paciente = await _pacienteRepository.GetByIdAsync(id);
+            if (paciente == null) return false;
+
+            var otroCedula = await _pacienteRepository.GetByCedulaAsync(pacienteDto.Cedula);
+            if (otroCedula != null && otroCedula.Id != id)
+                throw new InvalidOperationException("Ya existe otro paciente con esa cédula.");
+
+            var otroEmail = await _pacienteRepository.GetByEmailAsync(pacienteDto.Email);
+            if (otroEmail != null && otroEmail.Id != id)
+                throw new InvalidOperationException("Ya existe otro paciente con ese correo.");
+
+            paciente.Nombre = pacienteDto.Nombre.Trim();
+            paciente.Apellido = pacienteDto.Apellido.Trim();
+            paciente.Cedula = pacienteDto.Cedula.Trim();
+            paciente.Telefono = pacienteDto.Telefono.Trim();
+            paciente.Email = pacienteDto.Email.Trim().ToLower();
+            paciente.FechaNacimiento = pacienteDto.FechaNacimiento.Date;
+            paciente.Direccion = pacienteDto.Direccion.Trim();
+            paciente.UpdatedAt = DateTime.UtcNow;
+            paciente.UpdatedBy = _currentUserService.GetUsername();
+
+            await _pacienteRepository.UpdateAsync(paciente);
+            return true;
         }
 
-        public async Task DeleteAsync(int id)
+        public async Task<bool> DeleteAsync(int id)
         {
-            await _pacienteRepository.SoftDeleteAsync(id);
+            return await _pacienteRepository.SoftDeleteAsync(id, _currentUserService.GetUsername());
         }
     }
 }

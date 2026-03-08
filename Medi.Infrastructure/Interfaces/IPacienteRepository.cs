@@ -7,6 +7,9 @@ public interface IPacienteRepository
     Task<Paciente> AddAsync(Paciente paciente);
     Task<Paciente?> GetByIdAsync(int id);
     Task<List<Paciente>> GetAllAsync();
+    Task<bool> ExistsAsync(int id);
+    Task<Paciente?> GetByCedulaAsync(string cedula);
+    Task<Paciente?> GetByEmailAsync(string email);
     Task UpdateAsync(Paciente paciente);
-    Task SoftDeleteAsync(int id);
+    Task<bool> SoftDeleteAsync(int id, string? updatedBy);
 }

@@ -1,52 +1,54 @@
+using Medi.Application.DTOs;
+using Medi.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Medi.Infrastructure.Interfaces;
-using Medi.Domain.Entities;
 
 namespace Medi.Api.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class SesionesController : ControllerBase
     {
-        private readonly ISesionRepository _repo;
+        private readonly ISesionService _service;
 
-        public SesionesController(ISesionRepository repo)
+        public SesionesController(ISesionService service)
         {
-            _repo = repo;
+            _service = service;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Sesion>>> GetAll()
-            => Ok(await _repo.GetAllAsync());
+        public async Task<ActionResult<IEnumerable<SesionDto>>> GetAll()
+            => Ok(await _service.GetAllAsync());
 
         [HttpGet("{id:int}")]
-        public async Task<ActionResult<Sesion>> GetById(int id)
+        public async Task<ActionResult<SesionDto>> GetById(int id)
         {
-            var item = await _repo.GetByIdAsync(id);
+            var item = await _service.GetByIdAsync(id);
             return item is null ? NotFound() : Ok(item);
         }
 
         [HttpPost]
-        public async Task<ActionResult<Sesion>> Create(Sesion sesion)
+        public async Task<ActionResult<SesionDto>> Create([FromBody] SesionDto sesionDto)
         {
-            var created = await _repo.AddAsync(sesion);
+            var created = await _service.CreateAsync(sesionDto);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> Update(int id, Sesion sesion)
+        public async Task<IActionResult> Update(int id, [FromBody] SesionDto sesionDto)
         {
-            if (id != sesion.Id) return BadRequest("El ID no coincide.");
+            var updated = await _service.UpdateAsync(id, sesionDto);
+            if (!updated) return BadRequest("No se pudo actualizar la sesión.");
 
-            var result = await _repo.UpdateAsync(sesion);
-            return result ? NoContent() : NotFound();
+            return NoContent();
         }
 
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> SoftDelete(int id)
         {
-            var result = await _repo.SoftDeleteAsync(id);
-            return result ? NoContent() : NotFound();
+            var deleted = await _service.DeleteAsync(id);
+            return deleted ? NoContent() : NotFound();
         }
     }
 }

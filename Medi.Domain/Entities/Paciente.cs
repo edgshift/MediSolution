@@ -1,5 +1,4 @@
 using Medi.Domain.Core;
-using Medi.Domain.Entities;
 
 namespace Medi.Domain.Entities;
 

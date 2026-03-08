@@ -7,7 +7,7 @@ namespace Medi.Application.Interfaces
         Task<IEnumerable<SesionDto>> GetAllAsync();
         Task<SesionDto?> GetByIdAsync(int id);
         Task<SesionDto> CreateAsync(SesionDto sesionDto);
-        Task UpdateAsync(SesionDto sesionDto);
-        Task DeleteAsync(int id);
+        Task<bool> UpdateAsync(int id, SesionDto sesionDto);
+        Task<bool> DeleteAsync(int id);
     }
 }

@@ -8,15 +8,29 @@ namespace Medi.Application.Services
     public class SesionService : ISesionService
     {
         private readonly ISesionRepository _sesionRepository;
+        private readonly IPacienteRepository _pacienteRepository;
+        private readonly IDoctorRepository _doctorRepository;
+        private readonly ITratamientoRepository _tratamientoRepository;
+        private readonly ICurrentUserService _currentUserService;
 
-        public SesionService(ISesionRepository sesionRepository)
+        public SesionService(
+            ISesionRepository sesionRepository,
+            IPacienteRepository pacienteRepository,
+            IDoctorRepository doctorRepository,
+            ITratamientoRepository tratamientoRepository,
+            ICurrentUserService currentUserService)
         {
             _sesionRepository = sesionRepository;
+            _pacienteRepository = pacienteRepository;
+            _doctorRepository = doctorRepository;
+            _tratamientoRepository = tratamientoRepository;
+            _currentUserService = currentUserService;
         }
 
         public async Task<IEnumerable<SesionDto>> GetAllAsync()
         {
             var sesiones = await _sesionRepository.GetAllAsync();
+
             return sesiones.Select(s => new SesionDto
             {
                 Id = s.Id,
@@ -48,6 +62,15 @@ namespace Medi.Application.Services
 
         public async Task<SesionDto> CreateAsync(SesionDto sesionDto)
         {
+            if (!await _pacienteRepository.ExistsAsync(sesionDto.PacienteId))
+                throw new InvalidOperationException("El paciente no existe.");
+
+            if (!await _doctorRepository.ExistsAsync(sesionDto.DoctorId))
+                throw new InvalidOperationException("El doctor no existe.");
+
+            if (!await _tratamientoRepository.ExistsAsync(sesionDto.TratamientoId))
+                throw new InvalidOperationException("El tratamiento no existe.");
+
             var sesion = new Sesion
             {
                 FechaHora = sesionDto.FechaHora,
@@ -55,34 +78,56 @@ namespace Medi.Application.Services
                 Notas = sesionDto.Notas,
                 PacienteId = sesionDto.PacienteId,
                 DoctorId = sesionDto.DoctorId,
-                TratamientoId = sesionDto.TratamientoId
+                TratamientoId = sesionDto.TratamientoId,
+                CreatedBy = _currentUserService.GetUsername()
             };
 
-            var result = await _sesionRepository.AddAsync(sesion);
-            sesionDto.Id = result.Id;
-            return sesionDto;
-        }
+            var created = await _sesionRepository.AddAsync(sesion);
 
-        public async Task UpdateAsync(SesionDto sesionDto)
-        {
-            var sesion = await _sesionRepository.GetByIdAsync(sesionDto.Id);
-            if (sesion != null)
+            return new SesionDto
             {
-                sesion.FechaHora = sesionDto.FechaHora;
-                sesion.DuracionMinutos = sesionDto.DuracionMinutos;
-                sesion.Notas = sesionDto.Notas;
-                sesion.PacienteId = sesionDto.PacienteId;
-                sesion.DoctorId = sesionDto.DoctorId;
-                sesion.TratamientoId = sesionDto.TratamientoId;
-                sesion.UpdatedAt = DateTime.UtcNow;
-
-                await _sesionRepository.UpdateAsync(sesion);
-            }
+                Id = created.Id,
+                FechaHora = created.FechaHora,
+                DuracionMinutos = created.DuracionMinutos,
+                Notas = created.Notas,
+                PacienteId = created.PacienteId,
+                DoctorId = created.DoctorId,
+                TratamientoId = created.TratamientoId
+            };
         }
 
-        public async Task DeleteAsync(int id)
+        public async Task<bool> UpdateAsync(int id, SesionDto sesionDto)
         {
-            await _sesionRepository.SoftDeleteAsync(id);
+            if (id != sesionDto.Id) return false;
+
+            var sesion = await _sesionRepository.GetByIdAsync(id);
+            if (sesion == null) return false;
+
+            if (!await _pacienteRepository.ExistsAsync(sesionDto.PacienteId))
+                throw new InvalidOperationException("El paciente no existe.");
+
+            if (!await _doctorRepository.ExistsAsync(sesionDto.DoctorId))
+                throw new InvalidOperationException("El doctor no existe.");
+
+            if (!await _tratamientoRepository.ExistsAsync(sesionDto.TratamientoId))
+                throw new InvalidOperationException("El tratamiento no existe.");
+
+            sesion.FechaHora = sesionDto.FechaHora;
+            sesion.DuracionMinutos = sesionDto.DuracionMinutos;
+            sesion.Notas = sesionDto.Notas;
+            sesion.PacienteId = sesionDto.PacienteId;
+            sesion.DoctorId = sesionDto.DoctorId;
+            sesion.TratamientoId = sesionDto.TratamientoId;
+            sesion.UpdatedAt = DateTime.UtcNow;
+            sesion.UpdatedBy = _currentUserService.GetUsername();
+
+            await _sesionRepository.UpdateAsync(sesion);
+            return true;
+        }
+
+        public async Task<bool> DeleteAsync(int id)
+        {
+            return await _sesionRepository.SoftDeleteAsync(id, _currentUserService.GetUsername());
         }
     }
 }

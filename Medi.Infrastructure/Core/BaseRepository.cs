@@ -29,7 +29,11 @@ public abstract class BaseRepository<T> where T : BaseEntity
     public Task<List<T>> GetAllAsync()
         => _set.AsNoTracking()
                .Where(x => !x.IsDeleted)
+               .OrderBy(x => x.Id)
                .ToListAsync();
+
+    public Task<bool> ExistsAsync(int id)
+        => _set.AnyAsync(x => x.Id == id && !x.IsDeleted);
 
     public async Task UpdateAsync(T entity)
     {
@@ -38,13 +42,15 @@ public abstract class BaseRepository<T> where T : BaseEntity
         await _db.SaveChangesAsync();
     }
 
-    public async Task SoftDeleteAsync(int id)
+    public async Task<bool> SoftDeleteAsync(int id, string? updatedBy)
     {
         var entity = await _set.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
-        if (entity is null) return;
+        if (entity is null) return false;
 
         entity.IsDeleted = true;
         entity.UpdatedAt = DateTime.UtcNow;
+        entity.UpdatedBy = updatedBy;
         await _db.SaveChangesAsync();
+        return true;
     }
 }

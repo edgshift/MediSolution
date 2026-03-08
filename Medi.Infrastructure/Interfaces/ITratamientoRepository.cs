@@ -1,13 +1,13 @@
 using Medi.Domain.Entities;
 
-namespace Medi.Infrastructure.Interfaces
+namespace Medi.Infrastructure.Interfaces;
+
+public interface ITratamientoRepository
 {
-    public interface ITratamientoRepository
-    {
-        Task<IEnumerable<Tratamiento>> GetAllAsync();
-        Task<Tratamiento?> GetByIdAsync(int id);
-        Task<Tratamiento> AddAsync(Tratamiento tratamiento);
-        Task UpdateAsync(Tratamiento tratamiento);
-        Task SoftDeleteAsync(int id);
-    }
+    Task<Tratamiento> AddAsync(Tratamiento tratamiento);
+    Task<Tratamiento?> GetByIdAsync(int id);
+    Task<List<Tratamiento>> GetAllAsync();
+    Task<bool> ExistsAsync(int id);
+    Task UpdateAsync(Tratamiento tratamiento);
+    Task<bool> SoftDeleteAsync(int id, string? updatedBy);
 }

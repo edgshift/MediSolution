@@ -8,10 +8,12 @@ namespace Medi.Application.Services
     public class DoctorService : IDoctorService
     {
         private readonly IDoctorRepository _doctorRepository;
+        private readonly ICurrentUserService _currentUserService;
 
-        public DoctorService(IDoctorRepository doctorRepository)
+        public DoctorService(IDoctorRepository doctorRepository, ICurrentUserService currentUserService)
         {
             _doctorRepository = doctorRepository;
+            _currentUserService = currentUserService;
         }
 
         public async Task<IEnumerable<DoctorDto>> GetAllAsync()
@@ -22,8 +24,11 @@ namespace Medi.Application.Services
                 Id = d.Id,
                 Nombre = d.Nombre,
                 Apellido = d.Apellido,
+                Cedula = d.Cedula,
+                Sexo = d.Sexo,
                 Especialidad = d.Especialidad,
-                Telefono = d.Telefono
+                Telefono = d.Telefono,
+                Direccion = d.Direccion
             });
         }
 
@@ -37,44 +42,66 @@ namespace Medi.Application.Services
                 Id = doctor.Id,
                 Nombre = doctor.Nombre,
                 Apellido = doctor.Apellido,
+                Cedula = doctor.Cedula,
+                Sexo = doctor.Sexo,
                 Especialidad = doctor.Especialidad,
-                Telefono = doctor.Telefono
+                Telefono = doctor.Telefono,
+                Direccion = doctor.Direccion
             };
         }
 
         public async Task<DoctorDto> CreateAsync(DoctorDto doctorDto)
         {
+            var existente = await _doctorRepository.GetByCedulaAsync(doctorDto.Cedula);
+            if (existente != null)
+                throw new InvalidOperationException("Ya existe un doctor con esa cédula.");
+
             var doctor = new Doctor
             {
-                Nombre = doctorDto.Nombre,
-                Apellido = doctorDto.Apellido,
-                Especialidad = doctorDto.Especialidad,
-                Telefono = doctorDto.Telefono
+                Nombre = doctorDto.Nombre.Trim(),
+                Apellido = doctorDto.Apellido.Trim(),
+                Cedula = doctorDto.Cedula.Trim(),
+                Sexo = doctorDto.Sexo.Trim(),
+                Especialidad = doctorDto.Especialidad.Trim(),
+                Telefono = doctorDto.Telefono.Trim(),
+                Direccion = doctorDto.Direccion.Trim(),
+                CreatedBy = _currentUserService.GetUsername()
             };
 
             var result = await _doctorRepository.AddAsync(doctor);
+
             doctorDto.Id = result.Id;
             return doctorDto;
         }
 
-        public async Task UpdateAsync(DoctorDto doctorDto)
+        public async Task<bool> UpdateAsync(int id, DoctorDto doctorDto)
         {
-            var doctor = await _doctorRepository.GetByIdAsync(doctorDto.Id);
-            if (doctor != null)
-            {
-                doctor.Nombre = doctorDto.Nombre;
-                doctor.Apellido = doctorDto.Apellido;
-                doctor.Especialidad = doctorDto.Especialidad;
-                doctor.Telefono = doctorDto.Telefono;
-                doctor.UpdatedAt = DateTime.UtcNow;
+            if (id != doctorDto.Id) return false;
 
-                await _doctorRepository.UpdateAsync(doctor);
-            }
+            var doctor = await _doctorRepository.GetByIdAsync(id);
+            if (doctor == null) return false;
+
+            var otro = await _doctorRepository.GetByCedulaAsync(doctorDto.Cedula);
+            if (otro != null && otro.Id != id)
+                throw new InvalidOperationException("Ya existe otro doctor con esa cédula.");
+
+            doctor.Nombre = doctorDto.Nombre.Trim();
+            doctor.Apellido = doctorDto.Apellido.Trim();
+            doctor.Cedula = doctorDto.Cedula.Trim();
+            doctor.Sexo = doctorDto.Sexo.Trim();
+            doctor.Especialidad = doctorDto.Especialidad.Trim();
+            doctor.Telefono = doctorDto.Telefono.Trim();
+            doctor.Direccion = doctorDto.Direccion.Trim();
+            doctor.UpdatedAt = DateTime.UtcNow;
+            doctor.UpdatedBy = _currentUserService.GetUsername();
+
+            await _doctorRepository.UpdateAsync(doctor);
+            return true;
         }
 
-        public async Task DeleteAsync(int id)
+        public async Task<bool> DeleteAsync(int id)
         {
-            await _doctorRepository.SoftDeleteAsync(id);
+            return await _doctorRepository.SoftDeleteAsync(id, _currentUserService.GetUsername());
         }
     }
 }

@@ -1,52 +1,54 @@
+using Medi.Application.DTOs;
+using Medi.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Medi.Domain.Entities;
-using Medi.Infrastructure.Interfaces;
 
 namespace Medi.Api.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class DoctoresController : ControllerBase
     {
-        private readonly IDoctorRepository _repo;
+        private readonly IDoctorService _service;
 
-        public DoctoresController(IDoctorRepository repo)
+        public DoctoresController(IDoctorService service)
         {
-            _repo = repo;
+            _service = service;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Doctor>>> GetAll()
-            => Ok(await _repo.GetAllAsync());
+        public async Task<ActionResult<IEnumerable<DoctorDto>>> GetAll()
+            => Ok(await _service.GetAllAsync());
 
         [HttpGet("{id:int}")]
-        public async Task<ActionResult<Doctor>> GetById(int id)
+        public async Task<ActionResult<DoctorDto>> GetById(int id)
         {
-            var item = await _repo.GetByIdAsync(id);
+            var item = await _service.GetByIdAsync(id);
             return item is null ? NotFound() : Ok(item);
         }
 
         [HttpPost]
-        public async Task<ActionResult<Doctor>> Create(Doctor doctor)
+        public async Task<ActionResult<DoctorDto>> Create([FromBody] DoctorDto doctorDto)
         {
-            var created = await _repo.AddAsync(doctor);
+            var created = await _service.CreateAsync(doctorDto);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> Update(int id, Doctor doctor)
+        public async Task<IActionResult> Update(int id, [FromBody] DoctorDto doctorDto)
         {
-            if (id != doctor.Id) return BadRequest("Id mismatch");
+            var updated = await _service.UpdateAsync(id, doctorDto);
+            if (!updated) return BadRequest("No se pudo actualizar el doctor.");
 
-            await _repo.UpdateAsync(doctor);
             return NoContent();
         }
 
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> SoftDelete(int id)
         {
-            await _repo.SoftDeleteAsync(id);
-            return NoContent();
+            var deleted = await _service.DeleteAsync(id);
+            return deleted ? NoContent() : NotFound();
         }
     }
 }
