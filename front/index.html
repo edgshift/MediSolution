@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Medi Admin Front</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="grain"></div>
+  <div class="layout">
+    <aside class="panel auth-panel">
+      <h1>Medi Admin</h1>
+      <p class="muted">Panel para registrar admin, iniciar sesion y administrar todo el API.</p>
+
+      <label for="apiBaseUrl">API Base URL</label>
+      <input id="apiBaseUrl" type="text" placeholder="http://localhost:5047/api" />
+
+      <div class="auth-grid">
+        <section>
+          <h2>Registro</h2>
+          <form id="registerForm">
+            <input name="nombre" placeholder="Nombre" required />
+            <input name="username" placeholder="Username" required />
+            <input name="email" type="email" placeholder="Email" required />
+            <input name="password" type="password" minlength="6" placeholder="Password" required />
+            <select name="rol" required>
+              <option value="Admin">Admin</option>
+              <option value="Doctor">Doctor</option>
+              <option value="Recepcion">Recepcion</option>
+            </select>
+            <button type="submit">Registrarme</button>
+          </form>
+        </section>
+
+        <section>
+          <h2>Login</h2>
+          <form id="loginForm">
+            <input name="usernameOrEmail" placeholder="Username o Email" required />
+            <input name="password" type="password" placeholder="Password" required />
+            <button type="submit">Entrar</button>
+          </form>
+        </section>
+      </div>
+
+      <div class="session-box">
+        <div><strong>Sesion:</strong> <span id="sessionName">No autenticado</span></div>
+        <div><strong>Rol:</strong> <span id="sessionRole">-</span></div>
+        <button id="logoutBtn" class="ghost">Cerrar sesion</button>
+      </div>
+    </aside>
+
+    <main class="panel data-panel">
+      <div class="toolbar">
+        <h2>CRUD Administrativo</h2>
+        <div class="tabs" id="tabs"></div>
+      </div>
+
+      <section class="crud-grid">
+        <div class="card">
+          <h3 id="formTitle">Formulario</h3>
+          <form id="entityForm"></form>
+        </div>
+
+        <div class="card">
+          <div class="table-head">
+            <h3 id="tableTitle">Listado</h3>
+            <button id="refreshBtn" class="ghost">Actualizar</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead id="tableHead"></thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <script src="./app.js"></script>
+</body>
+</html>
